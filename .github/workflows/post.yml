@@ -1,0 +1,37 @@
+name: post-appveyor
+
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  post:
+    runs-on: windows-latest
+    steps:
+      - name: REST-API
+        run: |
+          # Create secret in Security->Actions->New repository secret
+          # Name: SECRET_IRIC_ACCESS_TOKEN
+          # and setting Value from
+          # Bearer token via https://ci.appveyor.com/api-keys
+          # with account set to i-RIC 
+
+          # headers hash table
+          $headers = @{}
+          $headers['Authorization'] = "Bearer ${{secrets.SECRET_IRIC_ACCESS_TOKEN}}"
+          $headers['Content-type']  = "application/json"
+          
+          # POST /api/builds
+          # see https://www.appveyor.com/docs/api/projects-builds/#start-build-of-branch-most-recent-commit
+          # build hash table
+          $build = @{}
+          $build['accountName'] = "i-RIC"
+          $build['projectSlug'] = "appveyor-hello-world"
+          $build['branch']      = "main"
+          
+          # convert build hash table to json
+          $build_json = $build | ConvertTo-Json
+
+          # POST
+          $response = Invoke-WebRequest -Uri 'https://ci.appveyor.com/api/builds' -Headers $headers -Method POST -Body $build_json
+          $response.StatusDescription
